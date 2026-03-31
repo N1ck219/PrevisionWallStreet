@@ -75,7 +75,7 @@ I due rami vengono concatenati prima del layer Dense finale.
 ### 1. Clona il repository
 
 ```bash
-git clone https://github.com/<tuo-username>/PrevisionWallStreet.git
+git clone https://github.com/N1ck219/PrevisionWallStreet.git
 cd PrevisionWallStreet
 ```
 
