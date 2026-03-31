@@ -1,0 +1,79 @@
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ========================
+# Virtual Environment
+# ========================
+.venv/
+venv/
+ENV/
+env/
+
+# ========================
+# Environment Variables
+# ========================
+.env
+.env.*
+
+# ========================
+# Dati e Database
+# ========================
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+# ========================
+# Report e Log
+# ========================
+reports/
+*.log
+
+# ========================
+# Modelli addestrati
+# ========================
+models/*.h5
+models/*.keras
+models/*.pb
+
+# ========================
+# IDE & Editor
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ========================
+# Distribuzione Python
+# ========================
+dist/
+build/
+*.egg-info/
+*.egg
+
+# ========================
+# Jupyter Notebook
+# ========================
+.ipynb_checkpoints/
+
+# ========================
+# TensorFlow
+# ========================
+logs/
+tensorboard/
