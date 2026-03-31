@@ -14,9 +14,10 @@ Il sistema scarica dati di mercato via [yfinance](https://github.com/ranaroussi/
 | **Modelli LSTM + Attention** | Architetture single-input e *Split Brain* (doppio input tecnico/macro) |
 | **Dati macro integrati** | NASDAQ, VIX, TNX, SOXX, GLD come feature aggiuntive |
 | **Backtesting** | Simulazione storica per ogni strategia (`simulations/`) |
-| **Cache SQLite** | Dati storici salvati in locale per minimizzare le chiamate API |
-| **Notifiche Telegram** | Report formattati HTML con segnali, bilancio e statistiche |
-| **Esecuzione ordini** | Integrazione opzionale con **Alpaca Markets** (paper trading) |
+| **Database separati** | Dati di mercato condivisi + DB operativo per ogni strategia |
+| **Sync S&P 500** | Script dedicato per scaricare lo storico completo dal 1990 |
+| **Notifiche Telegram** | Report unificati HTML con segnali, bilancio e statistiche |
+| **Esecuzione ordini** | Integrazione opzionale con **Alpaca Markets** e **Binance** |
 
 ---
 
@@ -25,18 +26,19 @@ Il sistema scarica dati di mercato via [yfinance](https://github.com/ranaroussi/
 ```
 PrevisionWallStreet/
 ├── core/                       # Moduli condivisi
-│   ├── config.py               # Configurazione globale (tickers, percorsi, API keys)
+│   ├── base_strategy.py        # Classe base astratta per tutte le strategie
+│   ├── config.py               # Configurazione globale (tickers, percorsi, API keys, DB)
 │   ├── data_manager.py         # Download e caching dati mercato (yfinance → SQLite)
-│   ├── features.py             # Feature engineering: indicatori tecnici + macro
+│   ├── features.py             # Feature engineering: indicatori tecnici + macro + crypto
 │   ├── model_factory.py        # Factory pattern per istanziare i modelli LSTM
-│   └── notifier.py             # Notifiche Telegram (report builder)
+│   └── notifier.py             # Notifiche Telegram (report builder unificato)
 │
-├── strategies/                 # Strategie di trading live
-│   ├── strategy_v4_3.py        # LSTM base con Attention
-│   ├── strategy_v4_6.py        # LSTM profonda (128 neuroni)
-│   ├── strategy_v5_6.py        # Split Brain (tecnico + macro)
-│   ├── strategy_v6_4.py        # Apex Fund — gestione rischio avanzata
-│   └── strategy_crypto_v1_7.py # Strategia dedicata criptovalute
+├── strategies/                 # Strategie di trading live (estendono BaseStrategy)
+│   ├── strategy_v4_3.py        # StrategyV43 — LSTM base con Attention
+│   ├── strategy_v4_6.py        # StrategyV46 — LSTM profonda (128 neuroni)
+│   ├── strategy_v5_6.py        # StrategyV56 — Split Brain (tecnico + macro)
+│   ├── strategy_v6_4.py        # StrategyV64 — Apex Fund, gestione rischio avanzata
+│   └── strategy_crypto_v1_7.py # StrategyCryptoV17 — Criptovalute
 │
 ├── simulations/                # Backtesting per ogni strategia
 │   ├── backtest_v4_3.py
@@ -46,11 +48,40 @@ PrevisionWallStreet/
 │   └── backtest_crypto_v1_7.py
 │
 ├── models/                     # Pesi dei modelli addestrati (.h5)
-├── data/                       # Database SQLite con dati storici
-├── run_stock.py                # Entry point — esecuzione strategie azionarie
-├── run_crypto.py               # Entry point — esecuzione strategia crypto
+│
+├── data/                       # Database SQLite
+│   ├── market_data.db          # Dati storici OHLCV (condiviso, S&P 500 dal 1990)
+│   ├── trades_v4_3.db          # Stato portafoglio e storico operazioni V4.3
+│   ├── trades_v4_6.db          # Stato portafoglio e storico operazioni V4.6
+│   ├── trades_v5_6.db          # Stato portafoglio V5.6
+│   └── trades_v6_4.db          # Stato portafoglio V6.4
+│
+├── main.py                     # CLI unificato (--all, --stock, --crypto, --strategy)
+├── run_stock.py                # Entry point legacy — strategie azionarie
+├── run_crypto.py               # Entry point legacy — strategia crypto
+├── sync_market_data.py         # Aggiornamento dati di mercato nel DB condiviso
+├── migrate_databases.py        # Migrazione una tantum dai vecchi DB ai nuovi
 └── requirements.txt            # Dipendenze Python
 ```
+
+---
+
+## 🗄️ Architettura Database
+
+I database sono separati per responsabilità:
+
+| Database | Contenuto | Usato da |
+|---|---|---|
+| `market_data.db` | Dati storici OHLCV (cache yfinance) | Tutte le strategie (lettura) |
+| `trades_v4_3.db` | Portafoglio, storico operazioni, benchmark | Solo V4.3 |
+| `trades_v4_6.db` | Posizioni live, storico win/loss | Solo V4.6 |
+| `trades_v5_6.db` | Stato portafoglio (entry, ATR, qty) | Solo V5.6 |
+| `trades_v6_4.db` | Stato portafoglio (entry, invested, qty) | Solo V6.4 |
+
+**Vantaggi:**
+- I dati di mercato vengono scaricati una sola volta e condivisi
+- Ogni strategia può essere resettata indipendentemente
+- Nessun conflitto di scrittura tra strategie diverse
 
 ---
 
@@ -101,33 +132,82 @@ Crea un file `.env` nella root del progetto:
 TELEGRAM_BOT_TOKEN=il_tuo_token
 TELEGRAM_CHAT_ID=il_tuo_chat_id
 
-# Opzionale — per esecuzione ordini su Alpaca (paper trading)
-ALPACA_API_KEY=la_tua_api_key
-ALPACA_SECRET_KEY=la_tua_secret_key
+# Alpaca — una coppia di chiavi per ogni strategia (paper trading)
+ALPACA_API_KEY=...           # V4.3
+ALPACA_SECRET_KEY=...
+ALPACA_API_KEY_4_6=...
+ALPACA_SECRET_KEY_4_6=...
+ALPACA_API_KEY_5_6=...
+ALPACA_SECRET_KEY_5_6=...
+ALPACA_API_KEY_6_4=...
+ALPACA_SECRET_KEY_6_4=...
+
+# Binance — per la strategia crypto (opzionale)
+BINANCE_API_KEY=...
+BINANCE_SECRET=...
 ```
 
 ---
 
 ## 🚀 Utilizzo
 
-### Esecuzione strategie azionarie
+### 1. Sincronizza i dati di mercato
 
 ```bash
-python run_stock.py
+# Aggiornamento rapido (solo ticker del progetto, dal 2020)
+python sync_market_data.py
+
+# Download completo S&P 500 dal 1990 (per addestramento modelli)
+python sync_market_data.py --full
+
+# Includi anche le criptovalute
+python sync_market_data.py --crypto
+
+# Tutto insieme con output dettagliato
+python sync_market_data.py --full --crypto -v
 ```
 
-Esegue in sequenza: V4.3 → V4.6 → V5.6 → V6.4, con pulizia della memoria tra un modello e l'altro.
-
-### Esecuzione strategia crypto
+### 2. Esecuzione strategie
 
 ```bash
-python run_crypto.py
+# Tutte le strategie (azioni + crypto)
+python main.py --all
+
+# Solo azioni (V4.3 → V6.4)
+python main.py --stock
+
+# Solo crypto
+python main.py --crypto
+
+# Strategie specifiche
+python main.py --strategy v4.3 v6.4
+
+# Lista strategie disponibili
+python main.py --list
 ```
 
-### Backtesting
+Compatibile con **crontab**:
+```bash
+# Ogni giorno alle 22:00 (lunedì-venerdì)
+0 22 * * 1-5 cd /path/to/PrevisionWallStreet && python main.py --stock
+# Ogni 4 ore per crypto
+0 */4 * * * cd /path/to/PrevisionWallStreet && python main.py --crypto
+```
+
+> **Nota:** `run_stock.py` e `run_crypto.py` sono ancora funzionanti per retrocompatibilità.
+
+### 3. Backtesting
 
 ```bash
 python simulations/backtest_v6_4.py
+```
+
+### 4. Migrazione (una tantum)
+
+Se hai dati nei vecchi database (`stock_data.db`, `stock_data_v45.db`):
+
+```bash
+python migrate_databases.py
 ```
 
 ---
@@ -150,8 +230,9 @@ python simulations/backtest_v6_4.py
 - **Python 3.10+**
 - **TensorFlow / Keras** — Modelli LSTM + Attention
 - **yfinance** — Download dati di mercato
-- **SQLite** — Cache dati storici locale
-- **Alpaca Markets SDK** — Esecuzione ordini (paper trading)
+- **SQLite** — Database locale (dati di mercato + operazioni)
+- **Alpaca Markets SDK** — Esecuzione ordini azioni (paper trading)
+- **CCXT / Binance** — Esecuzione ordini crypto (futures)
 - **scikit-learn** — Preprocessing (StandardScaler)
 - **Telegram Bot API** — Notifiche in tempo reale
 

@@ -65,3 +65,10 @@ class FeatureEngine:
         tech_cols = ['ret', 'vol_ret', 'RSI_14', 'Bollinger_%B', 'Bollinger_Width', 'ATRr_14', 'Dist_SMA200', 'OBV_ret']
         macro_cols = [f"{m}_ret" for m in macro_labels]
         return df[tech_cols].values, df[macro_cols].values
+
+    @staticmethod
+    def process_crypto_features(df_raw):
+        """Feature engineering per crypto (senza dati macro, usa SMA_50 invece di SMA_200)."""
+        df = df_raw.copy()
+        df = FeatureEngine.add_technical_indicators(df)
+        return df.replace([np.inf, -np.inf], np.nan).fillna(0).dropna()
