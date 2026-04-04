@@ -15,10 +15,16 @@ logging.basicConfig(
     level=logging.INFO, 
     format='%(asctime)s - AZIONI - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(os.path.join(BASE_DIR, "reports", "run_stocks_log.txt")),
-        logging.StreamHandler()
+        logging.FileHandler(os.path.join(BASE_DIR, "reports", "run_stocks_log.txt"), encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
     ]
 )
+
+# Forza l'output del terminale in UTF-8 se possibile (utile su Windows)
+if sys.stdout.encoding != 'utf-8':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding='utf-8', errors='replace')
 
 # Importa le strategie azionarie
 from strategies import strategy_v4_3

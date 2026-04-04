@@ -4,11 +4,14 @@ import datetime
 import yfinance as yf
 import random
 import time
+import os
 
 class DataManager:
     @staticmethod
     def setup_db(db_path):
-        return sqlite3.connect(db_path, check_same_thread=False)
+        """Crea la connessione al database e assicura che le directory esistano."""
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        return sqlite3.connect(db_path, timeout=30, check_same_thread=False)
 
     @staticmethod
     def get_cached_market_data(ticker, conn, start_date="2020-01-01"):

@@ -25,9 +25,18 @@ DB_TRADES_V64 = os.path.join(DATA_DIR, "trades_v6_4.db")
 DB_STOCK_V45 = os.path.join(DATA_DIR, "stock_data_v45.db")
 DB_STOCK_V4 = os.path.join(DATA_DIR, "stock_data.db")
 
+# Dati di sentiment 
+DB_MARKET_V7 = os.path.join(DATA_DIR, "market_data_v7.db")
+
 # ── TELEGRAM ──────────────────────────────────────────────
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+# ── NEWS API ──────────────────────────────────────────────
+ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
+MARKETAUX_API_KEY = os.getenv("MARKETAUX_API_KEY")
+FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY', '') # API opzionale per news
+NEWSAPI_KEY = os.getenv('NEWSAPI_KEY', '')         # API principale per estrazione news (fallback)
 
 # ── ALPACA — API key per strategia ────────────────────────
 ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")           # V4.3

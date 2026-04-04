@@ -49,7 +49,33 @@ def build_v5_0_split_brain_model(shape_t, shape_m):
     model = Model(inputs=[in_t, in_m], outputs=out)
     return model
 
-def get_model(version, weights_path=None, input_shape=None, shape_t=None, shape_m=None):
+def build_v7_0_triple_brain_model(shape_t, shape_m, shape_s):
+    """Architettura a triplo input (Triple Brain) per V7.0 (Technical, Macro, Sentiment)."""
+    # Ramo 1: Indicatori Tecnici
+    in_t = Input(shape=shape_t, name="input_tech")
+    x_t = LSTM(128, return_sequences=True)(in_t)
+    x_t = Dropout(0.3)(x_t)
+    att_t = Attention()([x_t, x_t])
+    x_t = LSTM(64)(att_t)
+    
+    # Ramo 2: Dati Macro
+    in_m = Input(shape=shape_m, name="input_macro")
+    x_m = LSTM(64)(in_m) 
+    
+    # Ramo 3: Dati di Sentiment (News/NLP)
+    in_s = Input(shape=shape_s, name="input_sentiment")
+    x_s = LSTM(32)(in_s)
+    
+    # Concatenazione
+    merged = concatenate([x_t, x_m, x_s])
+    x = Dense(64, activation='relu')(merged)
+    x = Dropout(0.3)(x)
+    out = Dense(1, activation='sigmoid')(x)
+    
+    model = Model(inputs=[in_t, in_m, in_s], outputs=out)
+    return model
+
+def get_model(version, weights_path=None, input_shape=None, shape_t=None, shape_m=None, shape_s=None):
     """
     Funzione universale per istanziare e caricare i pesi del modello richiesto.
     """
@@ -59,6 +85,8 @@ def get_model(version, weights_path=None, input_shape=None, shape_t=None, shape_
         model = build_v4_6_model(input_shape)
     elif version in ["5.6", "6.4"]:
         model = build_v5_0_split_brain_model(shape_t, shape_m)
+    elif version == "7.0":
+        model = build_v7_0_triple_brain_model(shape_t, shape_m, shape_s)
     else:
         raise ValueError(f"Versione modello '{version}' non riconosciuta.")
         
