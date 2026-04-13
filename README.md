@@ -10,9 +10,9 @@ Il sistema scarica dati di mercato via [yfinance](https://github.com/ranaroussi/
 
 | Feature | Dettaglio |
 |---|---|
-| **Multi-strategia** | 5 strategie azionarie (V4.3 → V7.0) + 1 crypto (V1.7) |
-| **Modelli LSTM + Attention** | Architetture single-input, *Split Brain* (doppio input) e *Triple Brain* (triplo input) |
-| **Dati macro e AI Sentiment** | Integrazione NASDAQ, VIX, TNX, SOXX, GLD e analisi testi notizie con **FinBERT** |
+| **Multi-strategia** | 4 strategie azionarie (V4.3 → V6.4) + 1 crypto (V1.7) |
+| **Modelli LSTM + Attention** | Architetture single-input e *Split Brain* (doppio input) |
+| **Dati macro** | Integrazione NASDAQ, VIX, TNX, SOXX, GLD |
 | **Backtesting** | Simulazione storica per ogni strategia (`simulations/`) |
 | **Database separati** | Dati di mercato condivisi + DB operativo per ogni strategia |
 | **Sync S&P 500** | Script dedicato per scaricare lo storico completo dal 1990 |
@@ -38,7 +38,6 @@ PrevisionWallStreet/
 │   ├── strategy_v4_6.py        # StrategyV46 — LSTM profonda (128 neuroni)
 │   ├── strategy_v5_6.py        # StrategyV56 — Split Brain (tecnico + macro)
 │   ├── strategy_v6_4.py        # StrategyV64 — Apex Fund, gestione rischio avanzata
-│   ├── strategy_v7_0.py        # StrategyV70 — Triple Brain (Tecnico + Macro + NLP Sentiment)
 │   └── strategy_crypto_v1_7.py # StrategyCryptoV17 — Criptovalute
 │
 ├── simulations/                # Backtesting per ogni strategia
@@ -46,7 +45,6 @@ PrevisionWallStreet/
 │   ├── backtest_v4_6.py
 │   ├── backtest_v5_6.py
 │   ├── backtest_v6_4.py
-│   ├── backtest_v7_0.py
 │   └── backtest_crypto_v1_7.py
 │
 ├── models/                     # Pesi dei modelli addestrati (.h5)
@@ -56,8 +54,7 @@ PrevisionWallStreet/
 │   ├── trades_v4_3.db          # Stato portafoglio e storico operazioni V4.3
 │   ├── trades_v4_6.db          # Stato portafoglio e storico operazioni V4.6
 │   ├── trades_v5_6.db          # Stato portafoglio V5.6
-│   ├── trades_v6_4.db          # Stato portafoglio V6.4
-│   └── trades_v7_0.db          # Stato portafoglio V7.0
+│   └── trades_v6_4.db          # Stato portafoglio V6.4
 │
 ├── main.py                     # CLI unificato (--all, --stock, --crypto, --strategy, --no-sync)
 ├── run_stock.py                # Entry point legacy — strategie azionarie
@@ -76,12 +73,10 @@ I database sono separati per responsabilità:
 | Database | Contenuto | Usato da |
 |---|---|---|
 | `market_data.db` | Dati storici OHLCV (cache yfinance) | Tutte le strategie (lettura) |
-| `market_data_v7.db`| Sentiment e confidenza FinBERT sulle News | Solo V7.0 Triple Brain |
 | `trades_v4_3.db` | Portafoglio, storico operazioni, benchmark | Solo V4.3 |
 | `trades_v4_6.db` | Posizioni live, storico win/loss | Solo V4.6 |
 | `trades_v5_6.db` | Stato portafoglio (entry, ATR, qty) | Solo V5.6 |
 | `trades_v6_4.db` | Stato portafoglio (entry, invested, qty) | Solo V6.4 |
-| `trades_v7_0.db` | Stato portafoglio (entry, invested, qty) | Solo V7.0 |
 
 **Vantaggi:**
 - I dati di mercato vengono scaricati una sola volta e condivisi
@@ -104,12 +99,6 @@ Sequenza temporale di feature tecniche → **LSTM → Attention → LSTM → Den
 
 I due rami vengono concatenati prima del layer Dense finale.
 
-### Triple Brain (V7.0)
-
-Tre rami paralleli:
-- **Ramo Tecnico**
-- **Ramo Macro**
-- **Ramo Sentiment** — Analisi PNL via rete FinBERT. Integra news su score netto, confidence e volatility delle testate.
 
 ---
 
@@ -179,19 +168,7 @@ python sync_market_data.py --crypto
 python sync_market_data.py --full --crypto -v
 ```
 
-### 2. Sincronizza Sentiment News (V7.0)
-Per alimentare il Triple Brain (Sentiment), bisogna riempire `market_data_v7.db`.
-
-```bash
-# Popola tutta la cache usando i CSV storici kaggle (Consigliato per la prima volta).
-python backfill_v7_kaggle.py --csv data\daily_news\raw_partner_headlines.csv
-
-# Sincronizza il sentiment giornaliero prelevando nuovi articoli dalle API gratuitamente.
-# (Viene lanciato anche automaticamente usando main.py)
-python sync_v7_sentiment.py
-```
-
-### 3. Esecuzione strategie
+### 2. Esecuzione strategie
 Lanciando il runner integrato, il programma per prima cosa esegue il sync automtico di mercato e notizie, poi avvia le versioni del bot scelte in riga di comando.
 
 ```bash

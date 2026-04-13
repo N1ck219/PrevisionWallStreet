@@ -25,9 +25,6 @@ DB_TRADES_V64 = os.path.join(DATA_DIR, "trades_v6_4.db")
 DB_STOCK_V45 = os.path.join(DATA_DIR, "stock_data_v45.db")
 DB_STOCK_V4 = os.path.join(DATA_DIR, "stock_data.db")
 
-# Dati di sentiment 
-DB_MARKET_V7 = os.path.join(DATA_DIR, "market_data_v7.db")
-
 # ── TELEGRAM ──────────────────────────────────────────────
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")

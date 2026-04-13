@@ -72,48 +72,6 @@ class FeatureEngine:
         return df[tech_cols].values, df[macro_cols].values
 
     @staticmethod
-    def process_v7_features(df_t, macro_dict=None, df_sentiment=None, df_global_sentiment=None):
-        """Feature engineering specifico per la V7.0 con l'inclusione del sentiment."""
-        df = FeatureEngine.process_stock_features(df_t, macro_dict)
-        
-        # Merge sentiment specifico del ticker
-        if df_sentiment is not None and not df_sentiment.empty:
-             df = df.merge(df_sentiment, on='data', how='left')
-             
-        # Merge sentiment GLOBALE del mercato
-        if df_global_sentiment is not None and not df_global_sentiment.empty:
-             # Rinominiamo le colonne per non farle collidere
-             df_gs = df_global_sentiment.rename(columns={
-                 'Sentiment_Score': 'Global_Sentiment_Score',
-                 'Confidence': 'Global_Confidence',
-                 'Volatility': 'Global_Volatility'
-             })
-             df = df.merge(df_gs, on='data', how='left')
-             
-        # Fill nan sentiment values if days didn't have news (sia stock che global)
-        cols_to_fix = [
-            'Sentiment_Score', 'Confidence', 'Volatility',
-            'Global_Sentiment_Score', 'Global_Confidence', 'Global_Volatility'
-        ]
-        for col in cols_to_fix:
-            if col in df.columns:
-                 df[col] = df[col].fillna(0)
-            else:
-                 df[col] = 0.0
-                 
-        return df
-        
-    @staticmethod
-    def extract_v7_features(df, macro_labels=MACRO_LABELS_ORDERED):
-        """Estrae i 3 tensori per il Triple Brain (Tecnico, Macro, Sentiment)."""
-        t_feat, m_feat = FeatureEngine.extract_features(df, macro_labels)
-        
-        sentiment_cols = ['Sentiment_Score', 'Confidence', 'Volatility']
-        s_feat = df[sentiment_cols].values
-        
-        return t_feat, m_feat, s_feat
-
-    @staticmethod
     def process_crypto_features(df_raw):
         """Feature engineering per crypto (senza dati macro, usa SMA_50 invece di SMA_200)."""
         df = df_raw.copy()

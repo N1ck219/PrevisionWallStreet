@@ -10,8 +10,8 @@ class SentimentEngine:
         self.device = 0 if torch.cuda.is_available() else -1
         print(f"L'analizzatore di sentiment utilizza: {'GPU (CUDA)' if self.device == 0 else 'CPU'}")
         
-        # Caricamento del modello FinBERT
-        self.analyzer = pipeline("sentiment-analysis", model=model_name, device=self.device)
+        # Caricamento del modello FinBERT con batch_size per abilitare calcolo in parallelo su GPU
+        self.analyzer = pipeline("sentiment-analysis", model=model_name, device=self.device, batch_size=32)
 
     def analyze_batch(self, texts):
         """
@@ -26,6 +26,7 @@ class SentimentEngine:
         truncated_texts = [text[:2000] for text in texts]
         
         try:
+            # Passiamo un set limitato di testi e lasciamo che la pipeline gestisca i batch (batch_size=32 def.)
             results = self.analyzer(truncated_texts)
             return results
         except Exception as e:
