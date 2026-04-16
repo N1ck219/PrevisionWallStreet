@@ -43,6 +43,7 @@ STRATEGIES = {
     'v4.6':   {'module': 'strategies.strategy_v4_6',        'class': 'StrategyV46',       'type': 'stock'},
     'v5.6':   {'module': 'strategies.strategy_v5_6',        'class': 'StrategyV56',       'type': 'stock'},
     'v6.4':   {'module': 'strategies.strategy_v6_4',        'class': 'StrategyV64',       'type': 'stock'},
+    'v7.0':   {'module': 'strategies.strategy_v7_0',        'class': 'StrategyV70',       'type': 'stock'},
     'crypto': {'module': 'strategies.strategy_crypto_v1_7', 'class': 'StrategyCryptoV17', 'type': 'crypto'},
 }
 

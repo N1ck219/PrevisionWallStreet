@@ -43,6 +43,7 @@ class BaseStrategy(ABC):
 
     bot_name: str = ""
     db_trades_path: str = ""
+    db_market_path: str = DB_MARKET
     model_path: str = ""
     use_macro: bool = True
 
@@ -59,7 +60,7 @@ class BaseStrategy(ABC):
         print(f"🚀 AVVIO {self.bot_name} - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
         # 1. Setup connessioni
-        self.conn_market = DataManager.setup_db(DB_MARKET)
+        self.conn_market = DataManager.setup_db(self.db_market_path)
         if self.db_trades_path:
             self.conn_trades = DataManager.setup_db(self.db_trades_path)
             self.setup_trades_db()
