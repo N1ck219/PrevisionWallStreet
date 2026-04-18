@@ -39,14 +39,14 @@ if sys.stdout.encoding != 'utf-8':
 
 # ── Registry delle strategie ─────────────────────────────
 STRATEGIES = {
-    'v4.3':   {'module': 'strategies.strategy_v4_3',        'class': 'StrategyV43',       'type': 'stock'},
-    'v4.6':   {'module': 'strategies.strategy_v4_6',        'class': 'StrategyV46',       'type': 'stock'},
-    'v5.6':   {'module': 'strategies.strategy_v5_6',        'class': 'StrategyV56',       'type': 'stock'},
-    'v6.4':   {'module': 'strategies.strategy_v6_4',        'class': 'StrategyV64',       'type': 'stock'},
-    'v7.0':   {'module': 'strategies.strategy_v7_0',        'class': 'StrategyV70',       'type': 'stock'},
-    'v7.2':   {'module': 'strategies.strategy_v7_2',        'class': 'StrategyV72',       'type': 'stock'},
-    'v7.3':   {'module': 'strategies.strategy_v7_3',        'class': 'StrategyV73',       'type': 'stock'},
-    'crypto': {'module': 'strategies.strategy_crypto_v1_7', 'class': 'StrategyCryptoV17', 'type': 'crypto'},
+    'v4.3':   {'module': 'strategies.v4.strategy_v4_3',        'class': 'StrategyV43',       'type': 'stock'},
+    'v4.6':   {'module': 'strategies.v4.strategy_v4_6',        'class': 'StrategyV46',       'type': 'stock'},
+    'v5.6':   {'module': 'strategies.v5.strategy_v5_6',        'class': 'StrategyV56',       'type': 'stock'},
+    'v6.4':   {'module': 'strategies.v6.strategy_v6_4',        'class': 'StrategyV64',       'type': 'stock'},
+    'v7.0':   {'module': 'strategies.v7.strategy_v7_0',        'class': 'StrategyV70',       'type': 'stock'},
+    'v7.2':   {'module': 'strategies.v7.strategy_v7_2',        'class': 'StrategyV72',       'type': 'stock'},
+    'v7.3':   {'module': 'strategies.v7.strategy_v7_3',        'class': 'StrategyV73',       'type': 'stock'},
+    'crypto': {'module': 'strategies.crypto.strategy_crypto_v1_7', 'class': 'StrategyCryptoV17', 'type': 'crypto'},
 }
 
 
@@ -93,7 +93,7 @@ def main():
          logging.info("=== SINCRONIZZAZIONE MERCATO E NOTIZIE ===")
          try:
              # Sync mercato
-             from sync_market_data import sync as sync_market
+             from scripts.maintenance.sync_market_data import sync as sync_market
              sync_market(include_crypto=args.crypto or args.all or ('crypto' in keys))
          except Exception as e:
              logging.error(f"Errore durante l'aggiornamento dati/news: {e}")

@@ -38,9 +38,9 @@ from core.config import (
     MACRO_MAP, MACRO_LABELS_ORDERED,
     ALPACA_API_KEY_7, ALPACA_SECRET_KEY_7
 )
-from core.data_manager import DataManager
-from core.features import FeatureEngine
-from core.model_factory import get_model
+from core.data.data_manager import DataManager
+from core.data.features import FeatureEngine
+from core.models.model_factory import get_model
 
 REPORT_DIR = os.path.join(BASE_DIR, 'reports', 'v7_2')
 os.makedirs(REPORT_DIR, exist_ok=True)

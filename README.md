@@ -27,47 +27,43 @@ Il sistema scarica dati di mercato via [yfinance](https://github.com/ranaroussi/
 
 ```
 PrevisionWallStreet/
-├── core/                       # Moduli condivisi
-│   ├── base_strategy.py        # Classe base astratta per tutte le strategie
-│   ├── config.py               # Configurazione globale (tickers, percorsi, API keys, DB)
-│   ├── data_manager.py         # Download e caching dati mercato (yfinance + Alpaca → SQLite)
-│   ├── features.py             # Feature engineering: indicatori tecnici + VWAP + macro + session
-│   ├── model_factory.py        # Factory pattern per istanziare i modelli LSTM
-│   └── notifier.py             # Notifiche Telegram (report builder unificato)
+├── core/                       # Moduli condivisi e Motore applicativo
+│   ├── models/                 # Architetture neurali (es. informer_layers.py)
+│   ├── data/                   # Data manager, feature engineering, news fetcher
+│   ├── utils/                  # Notifiche e sentiment analysis
+│   ├── database/               # Script di migrazione
+│   └── config.py               # Configurazione globale
 │
-├── strategies/                 # Strategie di trading live (estendono BaseStrategy)
-│   ├── strategy_v4_3.py        # StrategyV43 — LSTM base con Attention
-│   ├── strategy_v4_6.py        # StrategyV46 — LSTM profonda (128 neuroni)
-│   ├── strategy_v5_6.py        # StrategyV56 — Split Brain (tecnico + macro)
-│   ├── strategy_v6_4.py        # StrategyV64 — Apex Fund, gestione rischio avanzata
-│   ├── strategy_v7_0.py        # StrategyV70 — Intraday Sniper, Split Brain V7.0 + VWAP
-│   └── strategy_crypto_v1_7.py # StrategyCryptoV17 — Criptovalute
+├── strategies/                 # Tutte le strategie di trading live divisi per versione
+│   ├── v4/
+│   ├── v5/
+│   ├── v7/                     # Split Brain e Intraday
+│   ├── crypto/
+│   └── base_strategy.py        # Classe base astratta
 │
-├── simulations/                # Backtesting per ogni strategia
-│   ├── backtest_v4_3.py
-│   ├── backtest_v4_6.py
-│   ├── backtest_v5_6.py
-│   ├── backtest_v6_4.py
-│   ├── backtest_v7_0.py        # Backtest intraday (ultimi 500 giorni)
-│   └── backtest_crypto_v1_7.py
+├── simulations/                # Backtesting separatamente organizzati
+│   ├── v4/
+│   ├── v5/
+│   ├── v7/                     # Backtest intraday
+│   └── crypto/
 │
-├── models/                     # Pesi dei modelli addestrati (.h5)
+├── scripts/                    # Script operativi separati dalla logica core
+│   ├── training/               # Esecuzione modelli (train_v7_0.py, train_v8_0.py)
+│   ├── maintenance/            # Script download/sync dati di mercato
+│   └── runners/                # Script di entry point manuali singoli
 │
-├── data/                       # Database SQLite
-│   ├── market_data.db          # Dati storici OHLCV daily + intraday 1-min (condiviso)
-│   ├── trades_v4_3.db          # Stato portafoglio e storico operazioni V4.3
-│   ├── trades_v4_6.db          # Stato portafoglio e storico operazioni V4.6
-│   ├── trades_v5_6.db          # Stato portafoglio V5.6
-│   ├── trades_v6_4.db          # Stato portafoglio V6.4
-│   └── trades_v7_0.db          # Stato portafoglio + storico trade V7.0
+├── models/                     # Modelli neurali pesi esportati (.h5)
+│   ├── v4/
+│   ├── v5/
+│   └── v7/
 │
-├── main.py                     # CLI unificato (--all, --stock, --crypto, --strategy, --no-sync)
-├── download_intraday_data.py   # Download massivo dati 1-min da Alpaca Markets
-├── train_v7_0.py               # Training V7.0 (pre-train daily + fine-tune intraday)
-├── run_stock.py                # Entry point legacy — strategie azionarie
-├── run_crypto.py               # Entry point legacy — strategia crypto
-├── sync_market_data.py         # Aggiornamento dati di mercato nel DB condiviso
-├── migrate_databases.py        # Migrazione una tantum dai vecchi DB ai nuovi
+├── data/                       # Archiviazione fisica differenziata
+│   ├── databases/              # SQLite DBs (market_data.db, trades_v.db)
+│   └── datasets/               # Dataset elaborati in .h5, .pkl scalers
+│
+├── reports/                    # Log HTML/TXT divisi per versione (v4/, v7/ ...)
+│
+├── main.py                     # Entry point UNIFICATO CLI
 └── requirements.txt            # Dipendenze Python
 ```
 
@@ -178,45 +174,45 @@ BINANCE_SECRET=...
 
 ```bash
 # Aggiornamento rapido (solo ticker del progetto, dal 2020)
-python sync_market_data.py
+python scripts/maintenance/sync_market_data.py
 
 # Download completo S&P 500 dal 1990 (per addestramento modelli)
-python sync_market_data.py --full
+python scripts/maintenance/sync_market_data.py --full
 
 # Includi anche le criptovalute
-python sync_market_data.py --crypto
+python scripts/maintenance/sync_market_data.py --crypto
 ```
 
 ### 2. Download dati intraday per V7.0
 
 ```bash
 # Download dati a 1 minuto da Alpaca (~7 anni, tutti i ticker V7.0)
-python download_intraday_data.py
+python scripts/maintenance/download_intraday_data.py
 
 # Stato del download
-python download_intraday_data.py --status
+python scripts/maintenance/download_intraday_data.py --status
 
 # Download singolo ticker
-python download_intraday_data.py --ticker AAPL
+python scripts/maintenance/download_intraday_data.py --ticker AAPL
 
 # Includi anche i ticker macro (QQQ, GLD, SOXX)
-python download_intraday_data.py --include-macro
+python scripts/maintenance/download_intraday_data.py --include-macro
 ```
 
 ### 3. Training modello V7.0
 
 ```bash
 # Pipeline completa (pre-train daily + fine-tune intraday)
-python train_v7_0.py
+python scripts/training/train_v7_0.py
 
 # Solo pre-training su dati daily
-python train_v7_0.py --phase pretrain
+python scripts/training/train_v7_0.py --phase pretrain
 
 # Solo fine-tuning su dati intraday
-python train_v7_0.py --phase finetune
+python scripts/training/train_v7_0.py --phase finetune
 
 # Personalizza epoche
-python train_v7_0.py --epochs-pretrain 100 --epochs-finetune 50
+python scripts/training/train_v7_0.py --epochs-pretrain 100 --epochs-finetune 50
 ```
 
 ### 4. Esecuzione strategie
@@ -248,19 +244,19 @@ Compatibile con **crontab**:
 0 */4 * * * cd /path/to/PrevisionWallStreet && python main.py --crypto
 ```
 
-> **Nota:** `run_stock.py` e `run_crypto.py` sono ancora funzionanti per retrocompatibilità.
+> **Nota:** `scripts/runners/run_stock.py` e `scripts/runners/run_crypto.py` sono ancora funzionanti per invocazioni test singole.
 
 ### 5. Backtesting
 
 ```bash
 # Backtest intraday V7.0 (ultimi 500 giorni)
-python simulations/backtest_v7_0.py
+python simulations/v7/backtest_v7_0.py
 
 # Numero di giorni personalizzato
-python simulations/backtest_v7_0.py --days 250
+python simulations/v7/backtest_v7_0.py --days 250
 
 # Backtest altre strategie
-python simulations/backtest_v6_4.py
+python simulations/v6/backtest_v6_4.py
 ```
 
 ### 6. Migrazione (una tantum)
@@ -268,7 +264,7 @@ python simulations/backtest_v6_4.py
 Se hai dati nei vecchi database (`stock_data.db`, `stock_data_v45.db`):
 
 ```bash
-python migrate_databases.py
+python core/database/migrate_databases.py
 ```
 
 ---
