@@ -23,9 +23,7 @@ env/
 # ========================
 # Dati e Database
 # ========================
-data/*.db
-data/*.sqlite
-data/*.sqlite3
+/data/
 
 # ========================
 # Report e Log
@@ -39,6 +37,7 @@ reports/
 models/*.h5
 models/*.keras
 models/*.pb
+*.h5
 
 # ========================
 # IDE & Editor
@@ -78,4 +77,3 @@ build/
 logs/
 tensorboard/
 
-data
